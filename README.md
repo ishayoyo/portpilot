@@ -67,13 +67,13 @@ npm i -g porthub
 
 | | porthub | kill-port | fkill-cli |
 |---|---|---|---|
-| Shows process info before kill | Yes | No | No |
-| Memory & uptime | Yes | No | No |
-| Scan all ports | Yes | No | No |
-| Interactive prompt | Yes | No | Yes |
+| Port → process info table | Yes | No | Verbose flag |
+| Memory & uptime per process | Yes | No | CPU/mem % |
+| Scan all listening ports | Yes | No | No |
+| Interactive kill prompt | Yes | No | Yes |
 | Cross-platform | Yes | Yes | Yes |
-| Dependencies | 1 | 3 | 11 |
-| Maintained | Yes | Stale | Stale |
+| Zero-config `npx` usage | Yes | Yes | Yes |
+| Dependencies | 1 | 2 | 11 |
 
 ## Cross-Platform
 
