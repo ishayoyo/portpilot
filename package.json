@@ -1,11 +1,11 @@
 {
-  "name": "portpilot",
+  "name": "porthub",
   "version": "0.1.0",
   "description": "See what's using your ports. Kill it.",
   "type": "module",
   "main": "dist/cli.js",
   "bin": {
-    "portpilot": "./bin/portpilot.js"
+    "porthub": "./bin/porthub.js"
   },
   "scripts": {
     "build": "tsup src/cli.ts --format esm --clean",
@@ -35,7 +35,7 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/ishayoyo/portpilot"
+    "url": "https://github.com/ishayoyo/porthub"
   },
   "dependencies": {
     "picocolors": "^1.1.1"

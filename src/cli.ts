@@ -45,13 +45,13 @@ function parseArgs(argv: string[]): CliOptions {
 
 function printHelp(): void {
   console.log(`
-  ${pc.bold('portpilot')} — See what's using your ports. Kill it.
+  ${pc.bold('porthub')} — See what's using your ports. Kill it.
 
   ${pc.dim('Usage:')}
-    portpilot <port> [port...]     Show what's on a port
-    portpilot <port> --kill        Kill immediately
-    portpilot <port> --free        Kill + verify port is free
-    portpilot --scan               Show all listening ports
+    porthub <port> [port...]     Show what's on a port
+    porthub <port> --kill        Kill immediately
+    porthub <port> --free        Kill + verify port is free
+    porthub --scan               Show all listening ports
 
   ${pc.dim('Options:')}
     -k, --kill     Kill without prompt
@@ -61,14 +61,14 @@ function printHelp(): void {
     -v, --version  Show version
 
   ${pc.dim('Examples:')}
-    ${pc.cyan('$')} portpilot 3000
-    ${pc.cyan('$')} portpilot 3000 8080 --kill
-    ${pc.cyan('$')} portpilot --scan
+    ${pc.cyan('$')} porthub 3000
+    ${pc.cyan('$')} porthub 3000 8080 --kill
+    ${pc.cyan('$')} porthub --scan
 `);
 }
 
 function printVersion(): void {
-  console.log('portpilot v0.1.0');
+  console.log('porthub v0.1.0');
 }
 
 async function main(): Promise<void> {

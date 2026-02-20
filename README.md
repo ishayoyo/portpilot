@@ -1,16 +1,16 @@
-# portpilot
+# porthub
 
 > See what's using your ports. Kill it.
 
-[![npm version](https://img.shields.io/npm/v/portpilot.svg)](https://www.npmjs.com/package/portpilot)
-[![license](https://img.shields.io/npm/l/portpilot.svg)](https://github.com/ishayoyo/portpilot/blob/main/LICENSE)
+[![npm version](https://img.shields.io/npm/v/porthub.svg)](https://www.npmjs.com/package/porthub)
+[![license](https://img.shields.io/npm/l/porthub.svg)](https://github.com/ishayoyo/porthub/blob/main/LICENSE)
 
 <!-- TODO: Add terminal GIF recording here -->
 
 ## Quick Start
 
 ```bash
-npx portpilot 3000
+npx porthub 3000
 ```
 
 That's it. No install, no config.
@@ -19,22 +19,22 @@ That's it. No install, no config.
 
 ```bash
 # See what's on a port
-portpilot 3000
+porthub 3000
 
 # Kill it immediately
-portpilot 3000 --kill
+porthub 3000 --kill
 
 # Check multiple ports
-portpilot 3000 4000 8080
+porthub 3000 4000 8080
 
 # Kill multiple
-portpilot 3000 4000 --kill
+porthub 3000 4000 --kill
 
 # See all listening ports
-portpilot --scan
+porthub --scan
 
 # Kill + verify it's free
-portpilot 3000 --free
+porthub 3000 --free
 ```
 
 ### Example Output
@@ -57,15 +57,15 @@ portpilot 3000 --free
 
 ```bash
 # Use directly (no install)
-npx portpilot 3000
+npx porthub 3000
 
 # Or install globally
-npm i -g portpilot
+npm i -g porthub
 ```
 
-## Why portpilot?
+## Why porthub?
 
-| | portpilot | kill-port | fkill-cli |
+| | porthub | kill-port | fkill-cli |
 |---|---|---|---|
 | Shows process info before kill | Yes | No | No |
 | Memory & uptime | Yes | No | No |
