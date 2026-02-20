@@ -1,0 +1,48 @@
+{
+  "name": "portpilot",
+  "version": "0.1.0",
+  "description": "See what's using your ports. Kill it.",
+  "type": "module",
+  "main": "dist/cli.js",
+  "bin": {
+    "portpilot": "./bin/portpilot.js"
+  },
+  "scripts": {
+    "build": "tsup src/cli.ts --format esm --clean",
+    "dev": "tsup src/cli.ts --format esm --watch",
+    "lint": "tsc --noEmit",
+    "prepublishOnly": "npm run build"
+  },
+  "files": [
+    "dist",
+    "bin"
+  ],
+  "engines": {
+    "node": ">=18"
+  },
+  "keywords": [
+    "port",
+    "kill",
+    "process",
+    "cli",
+    "terminal",
+    "devtools",
+    "kill-port",
+    "free-port",
+    "cross-platform"
+  ],
+  "author": "Ishay Almuly",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ishayoyo/portpilot"
+  },
+  "dependencies": {
+    "picocolors": "^1.1.1"
+  },
+  "devDependencies": {
+    "@types/node": "^25.3.0",
+    "tsup": "^8.5.1",
+    "typescript": "^5.9.3"
+  }
+}
