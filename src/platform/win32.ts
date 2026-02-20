@@ -48,33 +48,43 @@ function formatUptime(ms: number): string {
   return `${seconds}s`;
 }
 
-function getProcessDetails(pid: number): { name: string; command: string; memory: number; uptime: string } {
+// Batch-fetch process details for multiple PIDs in a single wmic call
+function getBatchProcessDetails(pids: number[]): Map<number, { name: string; command: string; memory: number; uptime: string }> {
+  const result = new Map<number, { name: string; command: string; memory: number; uptime: string }>();
+  if (pids.length === 0) return result;
+
+  // Initialize all PIDs with defaults
+  for (const pid of pids) {
+    result.set(pid, { name: 'unknown', command: 'unknown', memory: 0, uptime: '' });
+  }
+
   try {
-    const tasklistOut = execSync(`tasklist /FI "PID eq ${pid}" /FO CSV /NH`, {
-      encoding: 'utf-8',
-      stdio: ['pipe', 'pipe', 'pipe'],
-    });
-    const csvMatch = tasklistOut.match(/"([^"]+)","(\d+)","[^"]*","[^"]*","([\d,]+)\s*K"/);
-    const name = csvMatch ? csvMatch[1].replace('.exe', '') : 'unknown';
-    const memory = csvMatch ? parseInt(csvMatch[3].replace(/,/g, ''), 10) * 1024 : 0;
+    // Single wmic call to get Name, CommandLine, WorkingSetSize, CreationDate for all PIDs
+    const pidFilter = pids.map(p => `ProcessId=${p}`).join(' or ');
+    const wmicOut = execSync(
+      `wmic process where "${pidFilter}" get ProcessId,Name,CommandLine,WorkingSetSize,CreationDate /FORMAT:CSV`,
+      { encoding: 'utf-8', stdio: ['pipe', 'pipe', 'pipe'], maxBuffer: 10 * 1024 * 1024 }
+    );
 
-    let command = name;
-    try {
-      const wmicOut = execSync(
-        `wmic process where processid=${pid} get CommandLine /FORMAT:VALUE`,
-        { encoding: 'utf-8', stdio: ['pipe', 'pipe', 'pipe'] }
-      );
-      const cmdMatch = wmicOut.match(/CommandLine=(.+)/);
-      if (cmdMatch && cmdMatch[1].trim()) command = cmdMatch[1].trim();
-    } catch {}
+    for (const line of wmicOut.split('\n')) {
+      const trimmed = line.trim();
+      if (!trimmed || trimmed.startsWith('Node,')) continue;
 
-    let uptime = '';
-    try {
-      const wmicTime = execSync(
-        `wmic process where processid=${pid} get CreationDate /FORMAT:VALUE`,
-        { encoding: 'utf-8', stdio: ['pipe', 'pipe', 'pipe'] }
-      );
-      const timeMatch = wmicTime.match(/CreationDate=(\d{14})/);
+      // CSV format: Node,CommandLine,CreationDate,Name,ProcessId,WorkingSetSize
+      // But CommandLine can contain commas, so we parse carefully
+      const match = trimmed.match(/^[^,]*,(.*),(\d{14}\.\d+[+-]\d+),([^,]+),(\d+),(\d+)$/);
+      if (!match) continue;
+
+      const [, commandLine, creationDate, name, pidStr, workingSet] = match;
+      const pid = parseInt(pidStr, 10);
+      if (!result.has(pid)) continue;
+
+      const processName = name.replace('.exe', '');
+      const memory = parseInt(workingSet, 10);
+      const command = commandLine?.trim() || processName;
+
+      let uptime = '';
+      const timeMatch = creationDate.match(/^(\d{14})/);
       if (timeMatch) {
         const s = timeMatch[1];
         const created = new Date(
@@ -87,12 +97,38 @@ function getProcessDetails(pid: number): { name: string; command: string; memory
         );
         uptime = formatUptime(Date.now() - created.getTime());
       }
-    } catch {}
 
-    return { name, command, memory, uptime };
+      result.set(pid, { name: processName, command, memory, uptime });
+    }
   } catch {
-    return { name: 'unknown', command: 'unknown', memory: 0, uptime: '' };
+    // Fallback: try tasklist for names at least
+    try {
+      const tasklistOut = execSync('tasklist /FO CSV /NH', {
+        encoding: 'utf-8',
+        stdio: ['pipe', 'pipe', 'pipe'],
+        maxBuffer: 10 * 1024 * 1024,
+      });
+      const pidSet = new Set(pids);
+      for (const line of tasklistOut.split('\n')) {
+        const csvMatch = line.match(/"([^"]+)","(\d+)","[^"]*","[^"]*","([\d,]+)\s*K"/);
+        if (!csvMatch) continue;
+        const pid = parseInt(csvMatch[2], 10);
+        if (!pidSet.has(pid)) continue;
+        const name = csvMatch[1].replace('.exe', '');
+        const memory = parseInt(csvMatch[3].replace(/,/g, ''), 10) * 1024;
+        const existing = result.get(pid)!;
+        result.set(pid, { ...existing, name, command: name, memory });
+      }
+    } catch {}
   }
+
+  return result;
+}
+
+// Single-PID fetch (for getProcessOnPort — only 1 process)
+function getProcessDetails(pid: number): { name: string; command: string; memory: number; uptime: string } {
+  const batch = getBatchProcessDetails([pid]);
+  return batch.get(pid) ?? { name: 'unknown', command: 'unknown', memory: 0, uptime: '' };
 }
 
 export const win32Platform: Platform = {
@@ -122,17 +158,27 @@ export const win32Platform: Platform = {
         encoding: 'utf-8',
         stdio: ['pipe', 'pipe', 'pipe'],
       });
-      const seen = new Map<number, ProcessInfo>();
 
+      // First pass: collect all unique port/pid pairs
+      const portPidMap = new Map<number, number>();
       for (const line of output.split('\n')) {
         const parsed = parseNetstatLineAny(line);
-        if (!parsed || seen.has(parsed.port)) continue;
-
-        const details = getProcessDetails(parsed.pid);
-        seen.set(parsed.port, { port: parsed.port, pid: parsed.pid, ...details });
+        if (!parsed || portPidMap.has(parsed.port)) continue;
+        portPidMap.set(parsed.port, parsed.pid);
       }
 
-      return [...seen.values()].sort((a, b) => a.port - b.port);
+      // Batch-fetch all process details in one call
+      const uniquePids = [...new Set(portPidMap.values())];
+      const detailsMap = getBatchProcessDetails(uniquePids);
+
+      // Build results
+      const results: ProcessInfo[] = [];
+      for (const [port, pid] of portPidMap) {
+        const details = detailsMap.get(pid) ?? { name: 'unknown', command: 'unknown', memory: 0, uptime: '' };
+        results.push({ port, pid, ...details });
+      }
+
+      return results.sort((a, b) => a.port - b.port);
     } catch {
       return [];
     }
