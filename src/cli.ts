@@ -68,7 +68,7 @@ function printHelp(): void {
 }
 
 function printVersion(): void {
-  console.log('porthub v0.1.0');
+  console.log('porthub v0.1.1');
 }
 
 async function main(): Promise<void> {
